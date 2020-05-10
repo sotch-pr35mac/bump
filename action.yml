@@ -1,0 +1,5 @@
+name: 'Bump Cargo Version Number'
+description: 'Bump cargo version number and update teh change log'
+runs:
+  using: 'node12'
+  main: 'src/index.js'
