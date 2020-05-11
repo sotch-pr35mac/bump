@@ -1,5 +1,5 @@
 name: 'Bump Cargo Version Number'
-description: 'Bump cargo version number and update teh change log'
+description: 'Bump cargo version number and update the change log'
 runs:
   using: 'node12'
   main: 'src/index.js'

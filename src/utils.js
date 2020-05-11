@@ -5,6 +5,26 @@ const PATCH = require('./defaults.js').PATCH;
 const MINOR = require('./defaults.js').MINOR;
 const MAJOR = require('./defaults.js').MAJOR;
 
+module.exports.getCommitMessages = function(latestReleaseSHA) {
+	return new Promise(resolve => {
+		exec("git log --format='oneline'", (error, stdout, stderr) => {
+			const commitHistory = stdout.split('\n');
+			let releaseCommits = [];
+			
+			for(let i = 0; i < commitHistory.length; i++) {
+				const currentCommit = commitHistory[i];
+				if(!currentCommit.includes(latestReleaseSHA)) {
+					releaseCommits.push(currentCommit);
+				} else {
+					break;
+				}
+			}
+
+			resolve(releaseCommits.map(commit => commit.substr(commit.indexOf(' ')+1)));
+		});
+	});
+}
+
 module.exports.getTomlField = function(toml, field) {
 	const lines = toml.split('\n');
 	let value = '';
@@ -38,13 +58,13 @@ module.exports.generateChangelog = function(versionInformation, changeList) {
 	return lines;
 }
 
-module.exports.execute = function(command, callback) {
-	exec(command, function(error, stdout, stderr) {
-		callback(stdout);
+module.exports.getLatestRelease = function() {
+	return new Promise(resolve => {
+		exec(`git log --grep="Merge pull request " --format='%H'`, (error, stdout, stderr) => {
+			resolve(stdout.split('\n')[1]);
+		});
 	});
 }
-
-moedule.exports.getLatestRelease = commitHashes => commitHashes.split('\n')[0];
 
 module.exports.getRecentCommits = function(commitList, latestRelease) {
 	let newCommits = [];
@@ -86,6 +106,7 @@ module.exports.getNextVersion = function(currentVersion, changes) {
 		patch: currentVersion[2]
 	};
 
+
 	const minimumBumpRequired = {
 		'added': MINOR,
 		'changed': PATCH,
@@ -105,13 +126,16 @@ module.exports.getNextVersion = function(currentVersion, changes) {
 	switch (bump) {
 		case PATCH:
 			versionObject.patch = parseInt(versionObject.patch) + 1;
+			break;
 		case MINOR:
 			versionObject.minor = parseInt(versionObject.minor) + 1;
 			versionObject.patch = 0;
+			break;
 		case MAJOR:
 			versionObject.major = parseInt(versionObject.major) + 1;
 			versionObject.minor = 0;
 			versionObject.patch = 0;
+			break;
 	}
 
 	return versionObject;
@@ -119,7 +143,7 @@ module.exports.getNextVersion = function(currentVersion, changes) {
 
 module.exports.getModifiedChangelog = function(changelog, markdownChanges) {
 	let changelogLines = changelog.split('\n');
-	let changelogHeader = changeLogLines.slice(0, 3);
+	let changelogHeader = changelogLines.slice(0, 3);
 	let previousReleaseChanges = changelogLines.slice(3);
 	return changelogHeader.concat(markdownChanges.concat(previousReleaseChanges)).join('\n');
 }
@@ -141,4 +165,23 @@ module.exports.getModifiedToml = function(toml, versionObject) {
 	}
 	tomlLines[versionIndex] = `version = "${format.versionNumber(versionObject)}"`;
 	return tomlLines.join('\n');
+}
+
+module.exports.isNewVersion = function(newVersionObject, currentVersion) {
+	const currentVersionObject = {
+		major: currentVersion[0],
+		minor: currentVersion[1],
+		patch: currentVersion[2]
+	};
+
+	let isNewVersion = false;
+	if(currentVersionObject.major < newVersionObject.major) {
+		isNewVersion = true;
+	} else if(currentVersionObject.minor < newVersionObject.minor) {
+		isNewVersion = true;
+	} else if(currentVersionObject.patch < newVersionObject.patch) {
+		isNewVersion = true;
+	}
+
+	return isNewVersion;
 }

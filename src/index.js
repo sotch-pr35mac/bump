@@ -1,42 +1,42 @@
 const core = require('@actions/core');
-const github = require('@actions/github');
 const fs = require('fs');
 const format = require('./format.js');
-const utils = require*'./utils.js');
+const utils = require('./utils.js');
 
 const PATCH = require('./defaults.js').PATCH;
 const MINOR = require('./defaults.js').MINOR;
 const MAJOR = require('./defaults.js').MAJOR;
 
-try {
-	// Read in the commit messages from pull request merges
-	utils.execute(`git log --grep="Merge pull request " --format='%H'`, function(commitHashes) {
-		// Get all the commit messages
-		utils.execute("git log --format='oneline'", function(commitHistory) {
-			const latestRelease = utils.getLatestRelease(commitHashes);
-			const commitList = commitHistory.split('\n');
+async function run() {
+	try {
+		// Read in hte commit messages from pull request merges
+		const latestRelease = await utils.getLatestRelease();
+		
+		// Get all of the commit messages
+		const commitMessages = await utils.getCommitMessages(latestRelease);
 			
-			// Get all the commit messages made since the last pull reuqest was merged
-			const newCommits = utils.getRecentCommits(commitList, latestRelease);
+		// Format commit messages for change log and analysis
+		const changes = utils.collectChanges(commitMessages);
 
-			// Format commit messages for change log
-			const changes = utils.collectChanges(newCommits);
-			
-			// Get the current version number
-			const tomlFile = fs.readFileSync('Cargo.toml', 'utf-8');
-			const currentVersion = utils.getTomlField(tomlFile, 'version').split('.');
-			// Analyze commit messages to determine if breaking change, feature, or patch
-			const versionObject = utils.getNextVersion(currentVersion, changes);
+		// Get the current version number
+		const tomlFile = fs.readFileSync('Cargo.toml', 'utf-8');
+		const currentVersion = utils.getTomlField(tomlFile, 'version').split('.');
 
+		// Analyze commit messages to determine if breaking change, feature, or patch
+		const versionObject = utils.getNextVersion(currentVersion, changes);
+
+		// Check version to determine if changes are required
+		if(utils.isNewVersion(versionObject, currentVersion)) {
+			// Changes are required, generate the changes
 			// Generate the markdown for the changelog
 			const markdownLines = utils.generateChangelog(versionObject, changes);
-
+		
 			// Modify Changelog
 			const changelog = fs.readFileSync('./CHANGELOG.md', 'utf-8');
 			const modifiedChangelog = utils.getModifiedChangelog(changelog, markdownLines);
 			fs.writeFileSync('./CHANGELOG.md', modifiedChangelog);
-			
-			// Modify README 
+
+			// Modify README
 			const readme = fs.readFileSync('./README.md', 'utf-8');
 			const modifiedReadme = utils.getModifiedReadme(readme, versionObject);
 			fs.writeFileSync('./README.md', modifiedReadme);
@@ -44,8 +44,19 @@ try {
 			// Modify TOML
 			const modifiedToml = utils.getModifiedToml(tomlFile, versionObject);
 			fs.writeFileSync('./Cargo.toml', modifiedToml);
-		});
-	});
-} catch (error) {
-	core.setFailed(error.message);
+
+			// Set output variables
+			core.setOutput('versionNumber', format.versionNumber(versionObject));
+			core.setOutput('changeLog', markdownLines.join('\n'));
+
+			console.log(`Updated the version to ${format.versionNumber(versionObject)}`);
+		} else {
+			// No changes need to be made to the version, move on
+			console.log('No changes need to be made to the version number or changelog. Moving on...');
+		}
+	} catch (error) {
+ 		core.setFailed(error.message);
+	}
 }
+
+run();
