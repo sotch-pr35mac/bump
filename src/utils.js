@@ -44,7 +44,7 @@ module.exports.execute = function(command, callback) {
 	});
 }
 
-moedule.exports.getLatestRelease = commitHashes => commitHashes.split('\n')[0];
+module.exports.getLatestRelease = commitHashes => commitHashes.split('\n')[0];
 
 module.exports.getRecentCommits = function(commitList, latestRelease) {
 	let newCommits = [];
@@ -119,7 +119,7 @@ module.exports.getNextVersion = function(currentVersion, changes) {
 
 module.exports.getModifiedChangelog = function(changelog, markdownChanges) {
 	let changelogLines = changelog.split('\n');
-	let changelogHeader = changeLogLines.slice(0, 3);
+	let changelogHeader = changelogLines.slice(0, 3);
 	let previousReleaseChanges = changelogLines.slice(3);
 	return changelogHeader.concat(markdownChanges.concat(previousReleaseChanges)).join('\n');
 }

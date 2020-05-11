@@ -16,7 +16,9 @@
     "url": "https://github.com/sotch-pr35mac/bump-version-number-action/issues"
   },
   "homepage": "https://github.com/sotch-pr35mac/bump-version-number-action#readme",
-  "dependencies": {},
+  "dependencies": {
+    "fs": "0.0.1-security"
+  },
   "devDependencies": {
     "@actions/core": "^1.2.4",
     "@actions/github": "^2.2.0"
