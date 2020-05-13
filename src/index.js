@@ -47,7 +47,7 @@ async function run() {
 
 			// Set output variables
 			core.setOutput('versionNumber', format.versionNumber(versionObject));
-			core.setOutput('changeLog', markdownLines.join('\n'));
+			core.setOutput('changeLog', format.releaseNote(markdownLines));
 
 			console.log(`Updated the version to ${format.versionNumber(versionObject)}`);
 		} else {

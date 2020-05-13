@@ -7,3 +7,5 @@ module.exports.changeType = changeType => changeType[0].toUpperCase() + changeTy
 module.exports.commitMessage = commitMessage => commitMessage.substr(commitMessage.indexOf(' ')+1);
 
 module.exports.removeQuotes = value => value.trim().slice(1, -1);
+
+module.exports.releaseNote = markdownLines => markdownLines.slice(1).join('\n');
