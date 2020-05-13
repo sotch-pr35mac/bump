@@ -61,7 +61,7 @@ module.exports.generateChangelog = function(versionInformation, changeList) {
 module.exports.getLatestRelease = function() {
 	return new Promise(resolve => {
 		exec(`git log --grep="Merge pull request " --format='%H'`, (error, stdout, stderr) => {
-			resolve(stdout.split('\n')[0]);
+			resolve(stdout.split('\n')[2]);
 		});
 	});
 }
