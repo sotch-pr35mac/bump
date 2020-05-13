@@ -14,6 +14,7 @@ async function run() {
 		
 		// Get all of the commit messages
 		const commitMessages = await utils.getCommitMessages(latestRelease);
+		console.log(`Commit Messages in Release: ${commitMessages}`);
 			
 		// Format commit messages for change log and analysis
 		const changes = utils.collectChanges(commitMessages);
